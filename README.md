@@ -1,9 +1,10 @@
-# mutation-testing
+# custom-mutation-testing
 
-Scripts to run mutation analysis on collections of student submissions to programming assignments. 
+Scripts cloned from [mutation-testing](https://github.com/ayaankazerouni/mutation-testing) to run mutation analysis on collections of student submissions to programming assignments. This fork is meant for edits to the PIT mutation testing.
+
 Mutation testing tools enabled:
 * PIT
-* \[EXPERIMENTAL\] muJava
+* \[EXPERIMENTAL\] muJava (See [mutation-testing](https://github.com/ayaankazerouni/mutation-testing))
 
 ## Overview
 ### [PIT](https://pitest.org)
@@ -18,28 +19,10 @@ Usage: [`./pit_runner.py --help`](pit/pit_runner.py)
 * a custom set of operators, provided as CLI arguments
 
 ### [analysis](analysis)
-
-Scripts and Jupyter notebooks used for analyses present in the paper
-
-[_Fast and Accurate Incremental Feedback for Students' Software Tests Using Selective Mutation Analysis_](ayaankazerouni.github.io/publications#jss2021mutation). **Kazerouni**, Davis, Basak, Shaffer, Servant, Edwards. Journal of Systems and Software, 2021.
-
-The paper's pretty long, so [an abridged overview of the main results is available.](https://ayaankazerouni.medium.com/fast-and-accurate-incremental-feedback-for-students-software-tests-using-selective-mutation-674bb2fc009c)
-
-* [forward_selection.py](analysis/forward_selection.py): A simple implementation of forward selection using `statsmodels`. This was used in the `Core Study` in the paper above.
-* [utils.py](analysis/utils.py): Various helper functions for wrangling mutation outcome data for analysis and plotting.
+See [mutation-testing](https://github.com/ayaankazerouni/mutation-testing)
 
 ### Utilities
-
-*`write_tasks.py`*
-
-Writes tasks to an NDJSON file.
-Tasks are just paths to projects where mutation testing is to be run.
-
-Usage: [`./write_tasks --help`](write_tasks.py)
+See [mutation-testing](https://github.com/ayaankazerouni/mutation-testing)
 
 ### **EXPERIMENTAL** [muJava](https://cs.gmu.edu/~offutt/mujava/)
-Since muJava runs on Java 8, we use Docker to generate and test these mutants.
-
-Usage: [`./mujava_runner.py --help`](mujava/mujava_runner.py)
-
-See also [mujava/run-docker.sh](mujava/run-docker.sh)
+See [mutation-testing](https://github.com/ayaankazerouni/mutation-testing)
