@@ -103,6 +103,15 @@ class MutationRunner:
                              This list subsumes the deletion_mutators list. 
     """
     # class attributes
+    custom_mutators = [
+       'AOD1',
+       'AOD2',
+       'REMOVE_CONDITIONALS_EQUAL_ELSE',
+       'REMOVE_CONDITIONALS_EQUAL_IF',
+       'REMOVE_CONDITIONALS_ORDER_ELSE',
+       'REMOVE_CONDITIONALS_ORDER_IF'
+    ]
+
     deletion_mutators = [
         'REMOVE_CONDITIONALS',
         'VOID_METHOD_CALLS',
@@ -155,7 +164,8 @@ class MutationRunner:
         'all': all_mutators,
         'deletion': deletion_mutators,
         'default': default_mutators,
-        'sufficient': sufficient_mutators
+        'sufficient': sufficient_mutators,
+        'custom': custom_mutators
     }
 
     def __init__(self, projectpath, antpath=None, mutators='all', targetclasses='',
