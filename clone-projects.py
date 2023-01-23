@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /c/Users/jonny/anaconda3/python
 """Simple utility for cloning projects for mutation testing."""
 import os
 import sys
@@ -77,16 +77,16 @@ if __name__ == '__main__':
     
     logging.basicConfig(filename='.log-clone', filemode='w', level=logging.WARN)
 
-    outerdir = os.path.join('/', 'tmp', 'mutation-testing')
+    outerdir = os.getcwd() + os.path.join('\\', 'tmp', 'mutation-testing')
     if os.path.exists(outerdir) and os.path.isdir(outerdir):
         rmtree(outerdir)
 
     taskfile = ARGS[0]
     package = '-p' in ARGS
-    with open(taskfile) as infile:
+    with open(taskfile, encoding="utf-16") as infile:
         for task in infile:
             opts = json.loads(task)
             projectpath = opts['projectPath']
             clonepath = os.path.join(outerdir, os.path.basename(projectpath))
+            print(clonepath + "\n")
             clone_project(projectpath, clonepath, package=package)
-

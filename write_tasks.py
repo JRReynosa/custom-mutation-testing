@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /c/Users/jonny/anaconda3/python
 """
 Author: Ayaan Kazerouni <ayaan@vt.edu>
 Description: Grab sample projects from the specified directory.

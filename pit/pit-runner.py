@@ -52,7 +52,7 @@ def run(taskfile, mutators='all', targetclasses=None, exclude_class=None, exclud
         exclude_class (str): Java globs of classes that should NOT be mutated
         exclude_test (str): Java globs of tests that should NOT be checked
     """
-    with open(taskfile) as infile:
+    with open(taskfile, encoding="utf-16") as infile:
         for line in infile:
             __run_for_project(line, mutators, targetclasses, exclude_class, exclude_test)
 
@@ -104,12 +104,8 @@ class MutationRunner:
     """
     # class attributes
     custom_mutators = [
-       'AOD1',
-       'AOD2',
-       'REMOVE_CONDITIONALS_EQUAL_ELSE',
-       'REMOVE_CONDITIONALS_EQUAL_IF',
-       'REMOVE_CONDITIONALS_ORDER_ELSE',
-       'REMOVE_CONDITIONALS_ORDER_IF'
+       'AOD',
+       'REMOVE_CONDITIONALS'
     ]
 
     deletion_mutators = [
@@ -172,7 +168,7 @@ class MutationRunner:
                  exclude_class=None, exclude_test=None):
         self.projectpath = os.path.normpath(os.path.expanduser(projectpath))
         self.projectname = os.path.basename(self.projectpath)
-        self.clonepath = os.path.join('/tmp/mutation-testing', self.projectname, '')
+        self.clonepath = os.getcwd() + os.path.join('\\tmp\\mutation-testing', self.projectname, '')
         self.mutators = self.mutator_lists.get(mutators, None)
         if not self.mutators:
             mutators = mutators.split(',')
