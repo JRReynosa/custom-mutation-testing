@@ -104,8 +104,8 @@ class MutationRunner:
     """
     # class attributes
     custom_mutators = [
-       'AOD',
-       'REMOVE_CONDITIONALS'
+       'REMOVE_CONDITIONALS',
+       'AOD'
     ]
 
     deletion_mutators = [
@@ -168,7 +168,7 @@ class MutationRunner:
                  exclude_class=None, exclude_test=None):
         self.projectpath = os.path.normpath(os.path.expanduser(projectpath))
         self.projectname = os.path.basename(self.projectpath)
-        self.clonepath = os.getcwd() + os.path.join('\\tmp\\mutation-testing', self.projectname, '')
+        self.clonepath = os.getcwd() + os.path.join('\\tmp\\mutation-testing', os.path.basename(os.path.split(self.projectpath)[0]), self.projectname, '')
         self.mutators = self.mutator_lists.get(mutators, None)
         if not self.mutators:
             mutators = mutators.split(',')
@@ -255,9 +255,9 @@ class MutationRunner:
             _, targettests = self.getpittargets()
         else:
             self.targetclasses, targettests = self.getpittargets()
-
+        
         antcmd = ('ant -f {} -Dbasedir={} -Dresource_dir={} -Dtarget_classes={} '
-                  '-Dtarget_tests={} -Dmutators={} -Dpit_reports={} pit') \
+                  '-Dtarget_tests={} -Dmutators="{}" -Dpit_reports={} pit') \
                   .format(
                       self.antpath,
                       self.clonepath,
@@ -278,28 +278,27 @@ class MutationRunner:
 
         Returns:
             (str, str). e.g. (com.example.*, com.example.*Test*)
-        """
-        src = os.path.join(self.clonepath, 'src', '')
+        """        
         targetclasses = []
         targettests = []
-        
+
         # finds Java source files recursively
-        for root, _, files in os.walk(src):
+        for root, _, files in os.walk(self.clonepath):
             if files:
-                packagename = root.replace(src, '').replace(os.sep, '.')
+                packagename = root.replace(self.clonepath, '').replace(os.sep, '.')
                 if not self.exclusion_class_rule:
                     targetclasses.append('{}.*'.format(packagename))
                 else:
                     for filename in files:
                         if not self.exclusion_class_rule(filename):
-                            targetclasses.append('{}.{}'.format(packagename,filename.replace(src, '').replace(os.sep, '.').replace('.java','')))
+                            targetclasses.append('{}.{}'.format(packagename,filename.replace(self.clonepath, '').replace(os.sep, '.').replace('.java','')))
 
                 if not self.exclusion_test_rule:
                     targettests.append('{}.*Test*'.format(packagename))
                 else:
                     for filename in files:
                         if not self.exclusion_test_rule(filename):
-                            targettests.append('{}.{}'.format(packagename,filename.replace(src, '').replace(os.sep, '.').replace('.java','')))
+                            targettests.append('{}.{}'.format(packagename,filename.replace(self.clonepath, '').replace(os.sep, '.').replace('.java','')))
 
         targetclasses = ','.join(targetclasses)
         targettests = ','.join(targettests)

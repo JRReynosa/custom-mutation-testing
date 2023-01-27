@@ -7,6 +7,9 @@ import json
 import logging
 from shutil import rmtree, copytree
 import subprocess
+from zipfile import ZipFile
+import shutil
+from pathlib import Path
 
 def remove_non_ascii(filepath):
     cmd = "perl -pi -e 's/[^[:ascii:]]//g' {}".format(filepath)
@@ -28,10 +31,42 @@ def clone_project(projectpath, clonepath, package=True):
     if os.path.exists(clonepath) and os.path.isdir(clonepath):
         rmtree(clonepath)
     copytree(projectpath, clonepath)
-    
+
+    # Example Data
+    # clonepath = \tmp\mutation-testing\<PID>
+    # \tmp\mutation-testing\<PID>\<Submission #>
+    # Up to 100 submissions
+
+    # For each submission in student PID directory
+    # i.e. \tmp\mutation-testing\<PID>\1, \tmp\mutation-testing\<PID>\2, etc.
+
+    # Pre-processing here with .zip files
+    # If .zip file in directory, unzip the file
+    zipfiles = glob.glob(os.path.join(clonepath, '**', '*.zip'), recursive=True)
+    for zipfile in zipfiles:
+        with ZipFile(zipfile, 'r') as zip_ref:
+            zip_ref.extractall(clonepath)
+
+    # Check if src directory already exists, if not then create it.
+    src = os.path.join(clonepath, "src")
+    if not os.path.isdir(src):
+        os.makedirs(src)
+        
+    # Move source files to src directory
     javafiles = glob.glob(os.path.join(clonepath, '**', '*.java'), recursive=True)
-    for filepath in javafiles:
-        remove_non_ascii(filepath)
+    for javafile in javafiles:
+        remove_non_ascii(javafile)
+        if not Path(os.path.join(src, os.path.basename(javafile))).exists():
+            shutil.move(javafile, src)
+
+    # Delete Everything but the src directory
+    for item in os.listdir(clonepath):
+        if item != "src":
+            item_path = os.path.join(clonepath, item)
+            if os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+            else:
+                os.remove(item_path)
     
     if package:
         # Create com.example package structure
@@ -39,8 +74,9 @@ def clone_project(projectpath, clonepath, package=True):
         os.makedirs(pkg)
 
         # Move Java files directly under src into src/com/example
-        mvcmd = 'mv {javafiles} {package}' \
+        mvcmd = "mv {javafiles} {package}" \
                 .format(javafiles=os.path.join(clonepath, 'src', '*.java'), package=pkg)
+        print(mvcmd)
         try:
             result = subprocess.run(mvcmd, shell=True, stdout=subprocess.PIPE, 
                                     stderr=subprocess.PIPE)
@@ -62,7 +98,7 @@ def clone_project(projectpath, clonepath, package=True):
         except subprocess.CalledProcessError as err:
             if err.returncode == 127 and sys.platform == 'darwin':
                 logging.error(('If you are on macOS, please install the GNU '
-                               'sed extension "gsed". To install: brew install gsed'))
+                            'sed extension "gsed". To install: brew install gsed'))
                 sys.exit(0)
             else:
                 logging.error('Could not clone project from {}'.format(projectpath))
@@ -87,6 +123,5 @@ if __name__ == '__main__':
         for task in infile:
             opts = json.loads(task)
             projectpath = opts['projectPath']
-            clonepath = os.path.join(outerdir, os.path.basename(projectpath))
-            print(clonepath + "\n")
+            clonepath = os.path.join(outerdir, os.path.basename(os.path.split(projectpath)[0]), os.path.basename(projectpath))
             clone_project(projectpath, clonepath, package=package)

@@ -48,13 +48,23 @@ def write_all_projects(dirpath, n_projects=None):
     #for item in os.listdir(dirpath):
     #    obj = {'projectPath': os.path.join(dirpath, item)}
     #    print(json.dumps(obj))
+    
+    for studentDirectory in os.listdir(dirpath):
+        studentDirectory = os.path.join(dirpath, studentDirectory)
+        if not os.path.isdir(studentDirectory):
+            continue
 
-    projects=  [itm for itm in os.listdir(dirpath)]
-    if n_projects is not None:
-        projects = random.sample(projects, int(n_projects))
-    for item in projects:
-        obj = {'projectPath': os.path.join(dirpath,item)}
-        print(json.dumps(obj))
+        submissions = [proj for proj in os.listdir(studentDirectory)]
+
+        if n_projects is not None:
+            submissions = random.sample(submissions, int(n_projects))
+
+        for item in submissions:
+            projectPath = os.path.join(studentDirectory, item)
+            if not os.path.isdir(projectPath):
+                continue
+            obj = {'projectPath': projectPath}
+            print(json.dumps(obj))
 
 
 if __name__ == '__main__':
