@@ -40,11 +40,16 @@ def clone_project(projectpath, clonepath, package=True):
     # For each submission in student PID directory
     # i.e. \tmp\mutation-testing\<PID>\1, \tmp\mutation-testing\<PID>\2, etc.
 
-    # Pre-processing here with .zip files
-    # If .zip file in directory, unzip the file
+    # Pre-processing here with .zip and .jar files
+    # If .zip/.jar file in directory, unzip the file
     zipfiles = glob.glob(os.path.join(clonepath, '**', '*.zip'), recursive=True)
     for zipfile in zipfiles:
         with ZipFile(zipfile, 'r') as zip_ref:
+            zip_ref.extractall(clonepath)
+
+    jarfiles = glob.glob(os.path.join(clonepath, '**', '*.jar'), recursive=True)
+    for jarfile in jarfiles:
+        with ZipFile(jarfile, 'r') as zip_ref:
             zip_ref.extractall(clonepath)
 
     # Check if src directory already exists, if not then create it.
@@ -54,6 +59,11 @@ def clone_project(projectpath, clonepath, package=True):
         
     # Move source files to src directory
     javafiles = glob.glob(os.path.join(clonepath, '**', '*.java'), recursive=True)
+
+    if not javafiles:
+        shutil.rmtree(os.path.dirname(clonepath))
+        return
+
     for javafile in javafiles:
         remove_non_ascii(javafile)
         if not Path(os.path.join(src, os.path.basename(javafile))).exists():
@@ -76,7 +86,6 @@ def clone_project(projectpath, clonepath, package=True):
         # Move Java files directly under src into src/com/example
         mvcmd = "mv {javafiles} {package}" \
                 .format(javafiles=os.path.join(clonepath, 'src', '*.java'), package=pkg)
-        print(mvcmd)
         try:
             result = subprocess.run(mvcmd, shell=True, stdout=subprocess.PIPE, 
                                     stderr=subprocess.PIPE)
@@ -113,13 +122,12 @@ if __name__ == '__main__':
     
     logging.basicConfig(filename='.log-clone', filemode='w', level=logging.WARN)
 
-    outerdir = os.getcwd() + os.path.join('\\', 'tmp', 'mutation-testing')
+    outerdir = os.getcwd() + os.path.join('/', 'tmp', 'mutation-testing')
     if os.path.exists(outerdir) and os.path.isdir(outerdir):
         rmtree(outerdir)
-
     taskfile = ARGS[0]
     package = '-p' in ARGS
-    with open(taskfile, encoding="utf-16") as infile:
+    with open(taskfile) as infile:
         for task in infile:
             opts = json.loads(task)
             projectpath = opts['projectPath']

@@ -52,9 +52,12 @@ def run(taskfile, mutators='all', targetclasses=None, exclude_class=None, exclud
         exclude_class (str): Java globs of classes that should NOT be mutated
         exclude_test (str): Java globs of tests that should NOT be checked
     """
-    with open(taskfile, encoding="utf-16") as infile:
+    with open(taskfile) as infile:
         for line in infile:
             __run_for_project(line, mutators, targetclasses, exclude_class, exclude_test)
+    proj_directory = os.getcwd() + os.path.join("/tmp/mutation-testing")
+    aggr = utils.aggregate_mutation_results(proj_directory, False)
+    aggr.to_csv(path_or_buf=os.path.join(os.getcwd(), 'aggregated.csv'))
 
 def __run_for_project(task, mutators, targetclasses, exclude_class, exclude_test):
     opts = json.loads(task)
@@ -168,7 +171,7 @@ class MutationRunner:
                  exclude_class=None, exclude_test=None):
         self.projectpath = os.path.normpath(os.path.expanduser(projectpath))
         self.projectname = os.path.basename(self.projectpath)
-        self.clonepath = os.getcwd() + os.path.join('\\tmp\\mutation-testing', os.path.basename(os.path.split(self.projectpath)[0]), self.projectname, '')
+        self.clonepath = os.getcwd() + os.path.join('//tmp//mutation-testing', os.path.basename(os.path.split(self.projectpath)[0]), self.projectname, 'src')
         self.mutators = self.mutator_lists.get(mutators, None)
         if not self.mutators:
             mutators = mutators.split(',')
@@ -245,6 +248,7 @@ class MutationRunner:
         runningtime = time.time() - start
         # look for the CSV file PIT creates
         coveragecsv = os.path.join(pitreports, 'mutations.csv')
+        
         coverage = utils.get_mutation_coverage(coveragecsv)
         if coverage is None:
             return (None, result, runningtime)
@@ -255,12 +259,11 @@ class MutationRunner:
             _, targettests = self.getpittargets()
         else:
             self.targetclasses, targettests = self.getpittargets()
-        
         antcmd = ('ant -f {} -Dbasedir={} -Dresource_dir={} -Dtarget_classes={} '
                   '-Dtarget_tests={} -Dmutators="{}" -Dpit_reports={} pit') \
                   .format(
                       self.antpath,
-                      self.clonepath,
+                      self.clonepath[:-4],
                       self.libpath,
                       self.targetclasses,
                       targettests,
@@ -282,10 +285,11 @@ class MutationRunner:
         targetclasses = []
         targettests = []
 
+        # self.clonepath = self.clonepath + "src/"
         # finds Java source files recursively
         for root, _, files in os.walk(self.clonepath):
             if files:
-                packagename = root.replace(self.clonepath, '').replace(os.sep, '.')
+                packagename = root.replace(self.clonepath + "", '')[1:].replace(os.sep, '.')
                 if not self.exclusion_class_rule:
                     targetclasses.append('{}.*'.format(packagename))
                 else:

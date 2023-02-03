@@ -6,6 +6,8 @@ import argparse
 import subprocess
 from shutil import rmtree, copytree
 import pandas as pd
+import glob
+from collections import defaultdict
 
 def get_mutation_coverage(resultspath):
     """Gets mutation coverage for the project at resultspath."""
@@ -47,27 +49,37 @@ def aggregate_mutation_results(dirpath, aggregate=False):
     if not os.path.isabs(dirpath):
         dirpath = os.path.abspath(dirpath)
 
-    projects = os.listdir(dirpath)
-    resultpaths = {}
+    students = os.listdir(dirpath)
+    resultpaths = {}  
 
     results = []
 
-    for proj in projects:
-        projpath = os.path.join(dirpath, proj)
-        mutationscsv = os.path.join(projpath, 'pitReports', 'mutations.csv')
-        mutationshtml = os.path.join(projpath, 'pitReports', 'com.example')
+    for student in students:
+        student_directory = os.path.join(dirpath, student)
+        student_submissions = os.listdir(student_directory)
+        for submission in student_submissions:
+            submission_path = os.path.join(student_directory, submission)
+            csvfiles = glob.glob(os.path.join(submission_path, '**', '*.csv'), recursive=True)
+            # mutationshtml = os.path.join(projpath, 'pitReports', 'com.example')
 
-        # are there mutation results to speak of?
-        if os.path.isfile(mutationscsv) and os.path.isdir(mutationshtml):
-            if aggregate:
-                results.append(pd.read_csv(mutationscsv))
-            else:
-                resultpaths[proj] = mutationscsv
+            # Are there mutation results to speak of?
+            # Each project should have a single .csv result file
+            # Thus, if a project ran PIT successfully, then csvfiles should only
+            # contain a singular .csv file
+            if csvfiles and os.path.isfile(csvfiles[0]): 
+                if aggregate:
+                    results.append(pd.read_csv(csvfiles[0]))
+                else:
+                    resultpaths[student + "_" + submission] = csvfiles[0]
+                    resultpaths
     
     if aggregate:
         return pd.concat(results)
 
     mutationcoverage = pd.Series(resultpaths).apply(__combiner)
-    mutationcoverage.index.name = 'userName'
+    mutationcoverage.reset_index(inplace=True)
+    mutationcoverage[['userName','submissionNo']] = mutationcoverage['index'].str.split('_', expand=True)
+    mutationcoverage.drop('index', axis=1, inplace=True)
+    mutationcoverage.set_index(['userName', 'submissionNo'], inplace=True)
     return mutationcoverage
 
