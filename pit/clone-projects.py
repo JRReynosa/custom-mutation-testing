@@ -69,21 +69,28 @@ def clone_project(projectpath, clonepath, package=True):
         if not Path(os.path.join(src, os.path.basename(javafile))).exists():
             shutil.move(javafile, src)
 
-    # Delete Everything but the src directory
+    # Move all other files to main project directory (i.e. .txt, .bin files for input)
     for item in os.listdir(clonepath):
-        if item != "src":
+        # Delete .class files as they disturb the PIT running algorithm
+        if ".class" in item or ".jar" in item: 
             item_path = os.path.join(clonepath, item)
-            if os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-            else:
-                os.remove(item_path)
+            os.remove(item_path)
+            continue
+
+        # Directory, skip
+        if os.path.isdir(os.path.join(clonepath, item)):
+            continue
+        
+        # Other file, so move to main directory
+        if not Path(os.path.join(src, os.path.basename(javafile))).exists():
+            shutil.move(javafile, clonepath)
     
     if package:
         # Create com.example package structure
         pkg = os.path.join(clonepath, 'src', 'com', 'example', '')
         os.makedirs(pkg)
 
-        # Move Java files directly under src into src/com/example
+        # Move source & text files directly under src into src/com/example
         mvcmd = "mv {javafiles} {package}" \
                 .format(javafiles=os.path.join(clonepath, 'src', '*.java'), package=pkg)
         try:

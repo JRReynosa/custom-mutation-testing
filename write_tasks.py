@@ -43,6 +43,9 @@ def write_successful(resultpath, n_projects):
         obj = {'projectPath': item}
         print(json.dumps(obj))
 
+def getBase(submissionPath):
+    return int(os.path.basename(submissionPath))
+
 def write_all_projects(dirpath, n_projects=None):
     """Write out paths to all projects within the specified dirpath."""
     #for item in os.listdir(dirpath):
@@ -55,6 +58,7 @@ def write_all_projects(dirpath, n_projects=None):
             continue
 
         submissions = [proj for proj in os.listdir(studentDirectory)]
+        submissions.sort(key=getBase)
 
         if n_projects is not None:
             submissions = random.sample(submissions, int(n_projects))
