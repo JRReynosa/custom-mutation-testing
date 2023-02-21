@@ -28,6 +28,7 @@ import time
 import subprocess
 import logging
 import argparse
+import math
 from shutil import rmtree, copytree
 
 import utils
@@ -52,9 +53,25 @@ def run(taskfile, mutators='all', targetclasses=None, exclude_class=None, exclud
         exclude_class (str): Java globs of classes that should NOT be mutated
         exclude_test (str): Java globs of tests that should NOT be checked
     """
+    
+    def batch(iterable, n=1):
+        l = len(iterable)
+        for ndx in range(0, l, n):
+            yield iterable[ndx:min(ndx + n, l)]
+
     with open(taskfile) as infile:
-        for line in infile:
-            __run_for_project(line, mutators, targetclasses, exclude_class, exclude_test)
+        batch_idx = 1
+        batch_size = 15
+        file_line_list = infile.readlines()
+        file_lines = len(file_line_list)
+        batches = batch(file_line_list, batch_size)
+        total_batches = math.ceil(file_lines / batch_size)
+        for proj_batch in batches:
+            print("Batch Number " + str(batch_idx) + " out of " + str(total_batches) + "\n")
+            for proj_line in proj_batch:
+                __run_for_project(proj_line, mutators, targetclasses, exclude_class, exclude_test)
+            batch_idx = batch_idx + 1
+
     proj_directory = os.getcwd() + os.path.join("/tmp/mutation-testing")
     aggr = utils.aggregate_mutation_results(proj_directory, False)
     aggr.to_csv(path_or_buf=os.path.join(os.getcwd(), 'aggregated.csv'))
