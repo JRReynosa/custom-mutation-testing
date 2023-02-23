@@ -29,6 +29,7 @@ import subprocess
 import logging
 import argparse
 import math
+import itertools
 from shutil import rmtree, copytree
 
 import utils
@@ -39,9 +40,9 @@ def main(args):
     logging.basicConfig(filename='.log-pit', filemode='w', level=loglevel)
 
     taskfile = args.taskfile
-    run(taskfile, args.mutators, args.targetclasses, args.excludetargetclasses, args.excludetargettests)
+    run(taskfile, args.mutators, args.targetclasses, args.excludetargetclasses, args.excludetargettests, int(args.startbatch), int(args.batchsize))
 
-def run(taskfile, mutators='all', targetclasses=None, exclude_class=None, exclude_test=None):
+def run(taskfile, mutators='all', targetclasses=None, exclude_class=None, exclude_test=None, startbatch=1, batchsize=15):
     """Trigger mutation testing and respond to output.
 
     Output is printed to the console in the form of a stringified dict.
@@ -60,17 +61,21 @@ def run(taskfile, mutators='all', targetclasses=None, exclude_class=None, exclud
             yield iterable[ndx:min(ndx + n, l)]
 
     with open(taskfile) as infile:
-        batch_idx = 1
-        batch_size = 15
+        batch_idx = startbatch
+        batch_size = batchsize
         file_line_list = infile.readlines()
         file_lines = len(file_line_list)
         batches = batch(file_line_list, batch_size)
+        batches = itertools.islice(batches, batch_idx - 1, None)
         total_batches = math.ceil(file_lines / batch_size)
         for proj_batch in batches:
             print("Batch Number " + str(batch_idx) + " out of " + str(total_batches) + "\n")
             for proj_line in proj_batch:
                 __run_for_project(proj_line, mutators, targetclasses, exclude_class, exclude_test)
+                sys.stdout.flush()
             batch_idx = batch_idx + 1
+
+        
 
     proj_directory = os.getcwd() + os.path.join("/tmp/mutation-testing")
     aggr = utils.aggregate_mutation_results(proj_directory, False)
@@ -340,6 +345,12 @@ if __name__ == '__main__':
                         help=('set of mutators to run: one of [all|default|deletion|sufficient] or '
                             'a list of comma-separated mutator names, as seen in the PIT documentation.'
                             ' Defaults to "deletion".'))
+    parser.add_argument('-b', '--startbatch', default=0,
+                        help=('Integer representing the batch number at which to start processing '
+                                'Defaults to the first batch'))
+    parser.add_argument('-s', '--batchsize', default=15,
+                        help=('Integer representing the batch size of the data processing '
+                                'Defaults to fifteen (15)'))                            
     parser.add_argument('-c', '--targetclasses', default=None,
                         help=('set of Java package globs to mutate: '
                             'a list of comma-separated values '
