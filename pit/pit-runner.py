@@ -40,7 +40,7 @@ def main(args):
     logging.basicConfig(filename='.log-pit', filemode='w', level=loglevel)
 
     taskfile = args.taskfile
-    run(taskfile, args.mutators, args.targetclasses, args.excludetargetclasses, args.excludetargettests, int(args.startbatch), int(args.batchsize))
+    run(taskfile, args.mutators, args.targetclasses, args.excludetargetclasses, args.excludetargettests, args.startbatch, args.batchsize)
 
 def run(taskfile, mutators='all', targetclasses=None, exclude_class=None, exclude_test=None, startbatch=1, batchsize=15):
     """Trigger mutation testing and respond to output.
@@ -61,12 +61,12 @@ def run(taskfile, mutators='all', targetclasses=None, exclude_class=None, exclud
             yield iterable[ndx:min(ndx + n, l)]
 
     with open(taskfile) as infile:
-        batch_idx = startbatch
-        batch_size = batchsize
+        batch_idx = int(startbatch)
+        batch_size = int(batchsize)
         file_line_list = infile.readlines()
         file_lines = len(file_line_list)
         batches = batch(file_line_list, batch_size)
-        batches = itertools.islice(batches, batch_idx - 1, None)
+        batches = itertools.islice(batches, int(batch_idx - 1), None)
         total_batches = math.ceil(file_lines / batch_size)
         for proj_batch in batches:
             print("Batch Number " + str(batch_idx) + " out of " + str(total_batches) + "\n")
@@ -345,7 +345,7 @@ if __name__ == '__main__':
                         help=('set of mutators to run: one of [all|default|deletion|sufficient] or '
                             'a list of comma-separated mutator names, as seen in the PIT documentation.'
                             ' Defaults to "deletion".'))
-    parser.add_argument('-b', '--startbatch', default=0,
+    parser.add_argument('-b', '--startbatch', default=1,
                         help=('Integer representing the batch number at which to start processing '
                                 'Defaults to the first batch'))
     parser.add_argument('-s', '--batchsize', default=15,
