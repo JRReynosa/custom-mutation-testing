@@ -1,0 +1,82 @@
+#! /usr/bin/env node
+
+import { parse } from 'csv-parse/lib/sync';
+const fs = require('fs');
+const { execSync, exec } = require('child_process');
+const REMOTE_URL = 'web-cat.cs.vt.edu/Web-CAT/WebObjects/Web-CAT.woa/git/StudentProject';
+
+if (process.argv.length < 4) {
+	console.error('Specify an input file and an output directory.');
+  process.exit(1);
+}
+
+const file = process.argv[2];
+const outputdir = process.argv[3];
+const dryRun = process.argv.length > 4 && process.argv[4] === '-d'
+
+if (!fs.existsSync(file)) {
+  console.error(`Error! Could not find file: ${file}`);
+  process.exit(1);
+}
+
+const set = new Set();
+const fileContents = fs.readFileSync(file, 'utf8');
+const batch = parse(fileContents, { columns: true });
+var records = batch.length
+const batch_size = 8;
+const total_batches = Math.ceil(records / batch_size);
+var current_batch = 1
+var batch_from_index = 0
+var batch_to_index = 0
+
+while (current_batch <= total_batches) {
+  if (current_batch == 1) {
+    batch_from_index = (batch_size * current_batch) - batch_size
+    batch_to_index = batch_size * current_batch
+  }
+  else { 
+    batch_from_index = (batch_size * current_batch) - batch_size + 1
+    batch_to_index = batch_size * current_batch
+      if (current_batch == total_batches) {
+        batch_to_index = records 
+      }
+  }
+
+  console.log(`Current cloning batch #${current_batch} out of #${total_batches} (Entries #${batch_from_index} to #${batch_to_index})`);
+  const batch = parse(fileContents, { columns: true, from: batch_from_index, to: batch_to_index });
+  clone(batch);
+  current_batch++;
+}
+
+function clone(batch) {
+  batch.forEach((r) => {
+    const projectUuid = r['project uuid'];
+    const userUuid = r['user uuid'];
+    if (projectUuid === '' || userUuid === '') {
+      return;
+    }
+  
+    if (!set.has(projectUuid)) {
+      const userName = r['username']
+      const uri = r['uri']
+      var assignment = uri.substring(uri.lastIndexOf('/') + 1)
+      assignment = assignment.replace(/\s/g, ''); // assignment names sometimes have spaces
+      // make the dirName so that we can match repos to other metrics by user
+      const dirName = `${projectUuid}_${userName}_${assignment}`;
+      const cmd = `git clone https://${userUuid}:${projectUuid}@${REMOTE_URL}/${projectUuid} ${outputdir}/${dirName}`;
+      if (dryRun) {
+        console.log(cmd);
+      } else {
+        try {
+          execSync(cmd);
+        } catch (err) {
+          console.log(err.message, 'Clone unsuccessful.');
+        } finally {
+          set.add(projectUuid);
+        }	
+      }
+    } else {
+      console.log(`Already cloned ${projectUuid}`);
+    }
+  });
+}
